@@ -4,18 +4,11 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 30
     environment:
-      groups:
-        - keystore_credentials
       vars:
-        PACKAGE_NAME: "com.galleryboss.app"
+        JAVA_HOME: /Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
     scripts:
-      - name: Build Android APK
+      - name: Build APK
         script: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug
     artifacts:
       - app/build/outputs/**/*.apk
-    publishing:
-      email:
-        recipients:
-          - your_email@example.com
