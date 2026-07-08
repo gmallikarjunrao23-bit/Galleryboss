@@ -1,2 +1,3 @@
-#!/bin/sh
-exec java -Xmx2048m -jar "$(dirname "$0")/.gradle/wrapper/gradle-wrapper.jar" "$@"
+plugins {
+    id 'com.android.application' version '8.0.0' apply false
+}
