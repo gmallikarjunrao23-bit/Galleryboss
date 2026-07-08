@@ -6,6 +6,7 @@ workflows:
     scripts:
       - name: Build APK
         script: |
-          gradle assembleDebug --stacktrace
+          chmod +x gradlew
+          ./gradlew assembleDebug
     artifacts:
       - app/build/outputs/**/*.apk
