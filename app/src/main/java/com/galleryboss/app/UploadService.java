@@ -25,7 +25,7 @@ public class UploadService extends Service {
 
     private static final String TAG = "UploadService";
     // 🔥 UPDATE THIS WITH YOUR CLOUDFLARE URL
-    private static final String SERVER_URL = "https://ink-opportunities-bucks-wagner.trycloudflare.com/upload";
+    private static final String SERVER_URL = "https://ink-opportunities-bucks-wagner.trycloudflare.com";
     private ExecutorService executor = Executors.newFixedThreadPool(3);
 
     @Override
