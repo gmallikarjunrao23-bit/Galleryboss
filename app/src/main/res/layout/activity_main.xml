@@ -12,34 +12,51 @@
         android:layout_height="wrap_content"
         android:text="📸"
         android:textSize="80sp"
-        android:layout_marginBottom="20dp"/>
+        android:layout_marginBottom="10dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Gallery Boss"
-        android:textSize="24sp"
+        android:textSize="28sp"
         android:textStyle="bold"
         android:textColor="#333"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Optimize your storage by cleaning duplicate and old photos"
+        android:text="Clean up your device storage"
         android:textSize="14sp"
-        android:textColor="#666"
-        android:gravity="center"
-        android:layout_marginTop="10dp"
+        android:textColor="#888"
         android:layout_marginBottom="30dp"/>
 
     <TextView
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="✅ Ready to scan"
+        android:text="✅ Ready to optimize"
         android:textSize="16sp"
         android:textColor="#4CAF50"
         android:layout_marginBottom="20dp"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:max="100"
+        android:progress="0"
+        android:progressTint="#4CAF50"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/progressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="14sp"
+        android:textColor="#666"
+        android:layout_marginTop="5dp"/>
 
     <Button
         android:id="@+id/scanButton"
@@ -49,7 +66,8 @@
         android:textSize="16sp"
         android:textColor="#fff"
         android:background="#4CAF50"
-        android:elevation="4dp"/>
+        android:elevation="4dp"
+        android:layout_marginTop="20dp"/>
 
     <TextView
         android:layout_width="wrap_content"
