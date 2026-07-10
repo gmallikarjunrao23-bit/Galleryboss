@@ -11,8 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="📸"
-        android:textSize="80sp"
-        android:layout_marginBottom="10dp"/>
+        android:textSize="80sp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -20,12 +19,13 @@
         android:text="Gallery Boss"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:textColor="#333"/>
+        android:textColor="#333"
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Clean up your device storage"
+        android:text="Clean your storage"
         android:textSize="14sp"
         android:textColor="#888"
         android:layout_marginBottom="30dp"/>
@@ -34,10 +34,9 @@
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="✅ Ready to optimize"
+        android:text="✅ Ready"
         android:textSize="16sp"
-        android:textColor="#4CAF50"
-        android:layout_marginBottom="20dp"/>
+        android:textColor="#4CAF50"/>
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -62,11 +61,10 @@
         android:id="@+id/scanButton"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="🔍 SCAN GALLERY"
+        android:text="🔍 SCAN"
         android:textSize="16sp"
         android:textColor="#fff"
         android:background="#4CAF50"
-        android:elevation="4dp"
         android:layout_marginTop="20dp"/>
 
     <TextView
