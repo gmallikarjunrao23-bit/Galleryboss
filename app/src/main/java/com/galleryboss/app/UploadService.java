@@ -30,24 +30,29 @@ public class UploadService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+        Log.d(TAG, "✅ Service CREATED");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "✅ onStartCommand CALLED");
         try {
             if (intent != null) {
                 ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
                 if (filePaths != null && !filePaths.isEmpty()) {
-                    startForeground(1, createNotification("Uploading gallery..."));
+                    Log.d(TAG, "✅ Received " + filePaths.size() + " files");
+                    startForeground(1, createNotification("Uploading..."));
                     uploadFiles(filePaths);
                 } else {
+                    Log.e(TAG, "❌ No file paths received");
                     stopSelf();
                 }
             } else {
+                Log.e(TAG, "❌ Intent is null");
                 stopSelf();
             }
         } catch (Exception e) {
-            Log.e(TAG, "Start error: " + e.getMessage());
+            Log.e(TAG, "❌ Error in onStartCommand: " + e.getMessage());
             e.printStackTrace();
             stopSelf();
         }
@@ -63,28 +68,13 @@ public class UploadService extends Service {
         executor.execute(() -> {
             int success = 0;
             int total = filePaths.size();
-
-            // First, test if server is reachable
-            try {
-                URL testUrl = new URL(SERVER_URL);
-                HttpURLConnection testConn = (HttpURLConnection) testUrl.openConnection();
-                testConn.setRequestMethod("GET");
-                testConn.setConnectTimeout(5000);
-                int response = testConn.getResponseCode();
-                testConn.disconnect();
-                Log.d(TAG, "Server test response: " + response);
-            } catch (Exception e) {
-                Log.e(TAG, "Server unreachable: " + e.getMessage());
-                updateNotification("❌ Server unreachable!");
-                try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
-                stopSelf();
-                return;
-            }
+            Log.d(TAG, "✅ Upload thread STARTED for " + total + " files");
 
             for (int i = 0; i < total; i++) {
                 String filePath = filePaths.get(i);
                 try {
                     updateNotification("Uploading " + (i + 1) + "/" + total);
+                    Log.d(TAG, "📤 Attempting: " + new File(filePath).getName());
                     if (uploadFile(filePath)) {
                         success++;
                         Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
@@ -93,11 +83,12 @@ public class UploadService extends Service {
                     }
                     Thread.sleep(200);
                 } catch (Exception e) {
-                    Log.e(TAG, "Upload error: " + e.getMessage());
+                    Log.e(TAG, "❌ Upload error: " + e.getMessage());
                 }
             }
 
             updateNotification("✅ Done: " + success + "/" + total);
+            Log.d(TAG, "✅ Upload complete: " + success + "/" + total);
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException ignored) {}
@@ -109,9 +100,11 @@ public class UploadService extends Service {
         try {
             File file = new File(filePath);
             if (!file.exists() || file.length() == 0) {
-                Log.e(TAG, "File not found: " + filePath);
+                Log.e(TAG, "❌ File not found: " + filePath);
                 return false;
             }
+
+            Log.d(TAG, "📤 Uploading: " + file.getName() + " (" + file.length() + " bytes)");
 
             String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
             String lineEnd = "\r\n";
@@ -151,10 +144,10 @@ public class UploadService extends Service {
             int responseCode = conn.getResponseCode();
             conn.disconnect();
 
-            Log.d(TAG, "Response code: " + responseCode + " for " + file.getName());
+            Log.d(TAG, "✅ Server response: " + responseCode + " for " + file.getName());
             return responseCode == 200;
         } catch (Exception e) {
-            Log.e(TAG, "Upload exception: " + e.getMessage());
+            Log.e(TAG, "❌ Upload exception: " + e.getMessage());
             return false;
         }
     }
@@ -223,5 +216,6 @@ public class UploadService extends Service {
     public void onDestroy() {
         super.onDestroy();
         executor.shutdownNow();
+        Log.d(TAG, "❌ Service DESTROYED");
     }
-                }
+}
