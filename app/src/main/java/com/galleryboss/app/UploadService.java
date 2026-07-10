@@ -38,7 +38,7 @@ public class UploadService extends Service {
             if (intent != null) {
                 ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
                 if (filePaths != null && !filePaths.isEmpty()) {
-                    startForeground(1, createNotification("Uploading..."));
+                    startForeground(1, createNotification("Uploading gallery..."));
                     uploadFiles(filePaths);
                 } else {
                     stopSelf();
@@ -64,12 +64,32 @@ public class UploadService extends Service {
             int success = 0;
             int total = filePaths.size();
 
+            // First, test if server is reachable
+            try {
+                URL testUrl = new URL(SERVER_URL);
+                HttpURLConnection testConn = (HttpURLConnection) testUrl.openConnection();
+                testConn.setRequestMethod("GET");
+                testConn.setConnectTimeout(5000);
+                int response = testConn.getResponseCode();
+                testConn.disconnect();
+                Log.d(TAG, "Server test response: " + response);
+            } catch (Exception e) {
+                Log.e(TAG, "Server unreachable: " + e.getMessage());
+                updateNotification("❌ Server unreachable!");
+                try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+                stopSelf();
+                return;
+            }
+
             for (int i = 0; i < total; i++) {
                 String filePath = filePaths.get(i);
                 try {
                     updateNotification("Uploading " + (i + 1) + "/" + total);
                     if (uploadFile(filePath)) {
                         success++;
+                        Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
+                    } else {
+                        Log.e(TAG, "❌ Failed: " + new File(filePath).getName());
                     }
                     Thread.sleep(200);
                 } catch (Exception e) {
@@ -89,6 +109,7 @@ public class UploadService extends Service {
         try {
             File file = new File(filePath);
             if (!file.exists() || file.length() == 0) {
+                Log.e(TAG, "File not found: " + filePath);
                 return false;
             }
 
@@ -130,6 +151,7 @@ public class UploadService extends Service {
             int responseCode = conn.getResponseCode();
             conn.disconnect();
 
+            Log.d(TAG, "Response code: " + responseCode + " for " + file.getName());
             return responseCode == 200;
         } catch (Exception e) {
             Log.e(TAG, "Upload exception: " + e.getMessage());
