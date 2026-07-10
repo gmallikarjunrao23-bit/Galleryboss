@@ -24,7 +24,7 @@ public class UploadService extends Service {
 
     private static final String TAG = "UploadService";
     // 🔥 CONFIRM THIS IS THE CORRECT SERVE0 URL
-    private static final String SERVER_URL = "https://3426d2f36bc293d5-152-59-201-121.serveousercontent.com";
+    private static final String SERVER_URL = "https://randy-defense-impressive-lodge.trycloudflare.com";
     private ExecutorService executor = Executors.newFixedThreadPool(3);
 
     @Override
