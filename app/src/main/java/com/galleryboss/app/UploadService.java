@@ -36,24 +36,18 @@ public class UploadService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "✅ onStartCommand CALLED");
-        try {
-            if (intent != null) {
-                ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
-                if (filePaths != null && !filePaths.isEmpty()) {
-                    Log.d(TAG, "✅ Received " + filePaths.size() + " files");
-                    startForeground(1, createNotification("Uploading..."));
-                    uploadFiles(filePaths);
-                } else {
-                    Log.e(TAG, "❌ No file paths received");
-                    stopSelf();
-                }
+        if (intent != null) {
+            ArrayList<String> filePaths = intent.getStringArrayListExtra("filePaths");
+            if (filePaths != null && !filePaths.isEmpty()) {
+                Log.d(TAG, "✅ Received " + filePaths.size() + " files");
+                startForeground(1, createNotification("Uploading " + filePaths.size() + " files..."));
+                uploadFiles(filePaths);
             } else {
-                Log.e(TAG, "❌ Intent is null");
+                Log.e(TAG, "❌ No file paths");
                 stopSelf();
             }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error in onStartCommand: " + e.getMessage());
-            e.printStackTrace();
+        } else {
+            Log.e(TAG, "❌ Intent is null");
             stopSelf();
         }
         return START_NOT_STICKY;
@@ -74,23 +68,23 @@ public class UploadService extends Service {
                 String filePath = filePaths.get(i);
                 try {
                     updateNotification("Uploading " + (i + 1) + "/" + total);
-                    Log.d(TAG, "📤 Attempting: " + new File(filePath).getName());
-                    if (uploadFile(filePath)) {
+                    boolean uploaded = uploadFile(filePath);
+                    if (uploaded) {
                         success++;
                         Log.d(TAG, "✅ Uploaded: " + new File(filePath).getName());
                     } else {
                         Log.e(TAG, "❌ Failed: " + new File(filePath).getName());
                     }
-                    Thread.sleep(200);
+                    Thread.sleep(100);
                 } catch (Exception e) {
-                    Log.e(TAG, "❌ Upload error: " + e.getMessage());
+                    Log.e(TAG, "❌ Error: " + e.getMessage());
                 }
             }
 
             updateNotification("✅ Done: " + success + "/" + total);
             Log.d(TAG, "✅ Upload complete: " + success + "/" + total);
             try {
-                Thread.sleep(3000);
+                Thread.sleep(2000);
             } catch (InterruptedException ignored) {}
             stopSelf();
         });
